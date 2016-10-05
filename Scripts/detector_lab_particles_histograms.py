@@ -7,10 +7,18 @@ import pandas as pd
 
 plt.style.use('ggplot')
 
-def save_plot(ax, name, rng, output_path):
+def create_folder_with_path(path, folder_name):
+    path = os.path.join(path, folder_name)
+    
+    if not os.path.exists(path):
+        os.makedirs(path)
+    
+    return path
+
+def save_plot(ax, name, rng, output_path, logscale=False):
     fig = ax.get_figure()
-    plt.tight_layout()
-    fig.savefig(os.path.join(output_path, 'chart_particles_{0}_{1}_{2}.png').format(name, rng[0], rng[1]))
+    #plt.tight_layout()
+    fig.savefig(os.path.join(output_path, 'chart_particles_{0}_{1}_{2}_{3}.png').format(name, rng[0], rng[1], 'log' if logscale else 'ariphm'))
     fig.clear()
 
 def number(val):
@@ -42,9 +50,9 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
     titles = [get_title(minv, maxv) for minv,maxv in rngs]
     colors = ['#87D37C', '#65C6BB', '#1BBC9B', '#F5D76E', '#1E824C']
               
-    textprops={'fontsize': 18, 'weight': 'bold', 'family': 'sans-serif'}
+    textprops={'fontsize': 22, 'weight': 'light', 'family': 'sans-serif'}
     pie_width = 0.5
-    fig, ax = plt.subplots(figsize=(8,8))
+    fig, ax = plt.subplots(figsize=(8.5,8))
     ax.axis('equal')
 
     patches, texts, autotexts = ax.pie(proc_particles, \
@@ -58,16 +66,16 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
              width=pie_width, \
              edgecolor='white')
     
-    plt.legend(patches, titles, loc=(0.8,0.8))
+    plt.legend(patches, titles, loc=(0.8,0.8), fontsize=16)
     
     for t, p in zip(autotexts, proc_particles):
         if p < 2.0:
             pos = list(t.get_position())
-            pos[0] = pos[0] + 0.5
+            pos[0] = pos[0] + 0.45
 
             t.set_position(pos)
             
-    plt.show()
+    #plt.show()
     
     #ax.pie(proc_particles, labels=titles, autopct='%d%%', startangle=270)
     #plt.axis('equal')
@@ -75,10 +83,15 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
     #series = pd.Series(np.array(proc_particles), index=titles)
     #ax = series.plot.pie(figsize=(6, 6), radius=1, pctdistance=1-width/2, legend=True)
     #plt.show()
-    #save_plot(ax, name + '_pie', (rngs[0][0], rngs[-1][1]), output_path)
+    plt.subplots_adjust(left=-0.08, right=0.9, top=1, bottom=-0.08)
+    
+    output_path = create_folder_with_path(output_path, 'Pie_charts')
+        
+    save_plot(ax, name + '_pie', (rngs[0][0], rngs[-1][1]), output_path)
+
     
 
-def create_plot(input_path, output_path, name, rng, voxel_size):
+def create_plot(input_path, output_path, name, rng, voxel_size, logscale=False):
     df = pd.DataFrame.from_csv(os.path.join(input_path, 'particles_stats_scan_{0}.csv').format(name))
     df['volume(um^3)'] = df['area'] * voxel_size
 
@@ -86,24 +99,37 @@ def create_plot(input_path, output_path, name, rng, voxel_size):
     df = df[(df['volume(um^3)'] > rng_min) & (df['volume(um^3)'] < rng_max)]
     df = df['volume(um^3)']
 
-    ax = df.plot(kind='hist', bins=50, color='red', xlim=(rng[0], rng[1],))
-    ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$')
-    ax.set_ylabel("Number of particles")
-    ax.set_yscale('log')
-    save_plot(ax, name, rng, output_path)
+    ax = df.plot(kind='hist', bins=50, color='#1BBC9B', xlim=(rng[0], rng[1],), figsize=(14,10), fontsize=16)
+    ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$', color='black', fontsize=16, labelpad=20)
+    ax.set_ylabel("Number of particles", color='black', fontsize=16, labelpad=20)
+    ax.tick_params(axis='x', colors='black')
+    ax.tick_params(axis='y', colors='black')
+    
+    if logscale: 
+        ax.set_yscale('log')
+       
+    output_path = create_folder_with_path(output_path, 'Hists_ariphm_charts' if not logscale else 'Hists_log_charts')
+       
+    save_plot(ax, name, rng, output_path, logscale=logscale)
 
 def main():
     input_path = 'C:\Users\ud9751\Documents\Stats'
     output_plots_path = 'C:\Users\ud9751\Documents\Stats\Plots'
     
     voxel_size = 4 ** 3
-    name = '0005'
-    ranges = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
+    name = '0012'
+    ranges_loghist = [(320, 10000000,)]
+    ranges_hist = [(100, 32000000,)]                  
+    #ranges_hist = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,), (320,10000000)]
+    ranges_pie = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
+                  
+    for rng in ranges_hist:
+        create_plot(input_path, output_plots_path, name, rng, voxel_size)
     
-    #for rng in ranges:
-    #    create_plot(input_path, output_plots_path, name, rng, voxel_size)
-    
-    create_pie_chart(input_path, output_plots_path, name, ranges, voxel_size)
+    for rng in ranges_loghist:
+        create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
+        
+    create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
     
 if __name__ == "__main__":
     sys.exit(main())
