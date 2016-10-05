@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import colorConverter
 import numpy as np
 import pandas as pd
+import matplotlib.mlab as mlab
 
 plt.style.use('ggplot')
 
@@ -14,6 +15,24 @@ def create_folder_with_path(path, folder_name):
         os.makedirs(path)
     
     return path
+
+def create_distribution_std(input_path, name, voxel_size, rng):
+    df = pd.DataFrame.from_csv(os.path.join(input_path, 'particles_stats_scan_{0}.csv').format(name))
+    df['volume(um^3)'] = df['area'] * voxel_size
+    
+    particle_df = df[(df['volume(um^3)'] > rng[0]) & (df['volume(um^3)'] < rng[1])]
+    particle_df = particle_df['volume(um^3)']
+    std = particle_df.std()
+    mean = particle_df.mean()
+                              
+    n, bins, patches = plt.hist(particle_df.values, bins=50, normed=True, alpha=0.5)
+    
+    y = mlab.normpdf(bins, mean, std)
+    plt.plot(bins, y, 'r--')
+    plt.xlabel('Particles size')
+    plt.ylabel('Deviation')
+    plt.title(r'Histogram of IQ: $\mu=100$, $\sigma=15$')
+    plt.show()
 
 def save_plot(ax, name, rng, output_path, logscale=False):
     fig = ax.get_figure()
@@ -113,23 +132,25 @@ def create_plot(input_path, output_path, name, rng, voxel_size, logscale=False):
     save_plot(ax, name, rng, output_path, logscale=logscale)
 
 def main():
-    input_path = 'C:\Users\ud9751\Documents\Stats'
-    output_plots_path = 'C:\Users\ud9751\Documents\Stats\Plots'
+    input_path = '..'
+    output_plots_path = os.path.join('..', 'Plots')
     
-    voxel_size = 4 ** 3
-    name = '0012'
+    voxel_size = 3.7 ** 3
+    name = '0005'
     ranges_loghist = [(320, 10000000,)]
-    ranges_hist = [(100, 32000000,)]                  
-    #ranges_hist = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,), (320,10000000)]
+    #ranges_hist = [(100, 32000000,)]                  
+    ranges_hist = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,), (320,10000000)]
     ranges_pie = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
                   
-    for rng in ranges_hist:
-        create_plot(input_path, output_plots_path, name, rng, voxel_size)
+    #for rng in ranges_hist:
+        #create_plot(input_path, output_plots_path, name, rng, voxel_size)
     
-    for rng in ranges_loghist:
-        create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
+    #for rng in ranges_loghist:
+       #create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
         
-    create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
+    #create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
+    
+    create_distribution_std (input_path, name, voxel_size, (5000, 10000))
     
 if __name__ == "__main__":
     sys.exit(main())
