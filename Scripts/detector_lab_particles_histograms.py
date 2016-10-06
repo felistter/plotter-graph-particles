@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.mlab as mlab
 
+
+COLORS = ['#87D37C', '#65C6BB', '#1BBC9B', '#F5D76E', '#1E824C']
+
 plt.style.use('ggplot')
 
 def create_folder_with_path(path, folder_name):
@@ -108,6 +111,28 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
         
     save_plot(ax, name + '_pie', (rngs[0][0], rngs[-1][1]), output_path)
 
+def create_plot_stack(input_path, output_path, names, rngs, voxel_size, colors, logscale=False):
+    for name, rgn_collection, color in zip(names, rngs, colors):
+        df = pd.DataFrame.from_csv(os.path.join(input_path, 'particles_stats_scan_{0}.csv').format(name))
+        df['volume(um^3)'] = df['area'] * voxel_size
+           
+        for rng in rgn_collection:
+            rng_min, rng_max = rng[0], rng[1]
+            df = df[(df['volume(um^3)'] > rng_min) & (df['volume(um^3)'] < rng_max)]
+            df = df['volume(um^3)']
+        
+            ax = df.plot(kind='hist', bins=50, color=color, xlim=(rng[0], rng[1],), figsize=(14,10), fontsize=16)
+            ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$', color='black', fontsize=16, labelpad=20)
+            ax.set_ylabel("Number of particles", color='black', fontsize=16, labelpad=20)
+            ax.tick_params(axis='x', colors='black')
+            ax.tick_params(axis='y', colors='black')
+            
+            if logscale: 
+                ax.set_yscale('log')
+       
+    output_path = create_folder_with_path(output_path, ('Hists_ariphm_charts' if not logscale else 'Hists_log_charts') + '_stack')
+       
+    save_plot(ax, '_'.join(names), (rngs[0][0][0], rngs[-1][0][1]), output_path, logscale=logscale)
     
 
 def create_plot(input_path, output_path, name, rng, voxel_size, logscale=False):
@@ -137,20 +162,29 @@ def main():
     
     voxel_size = 3.7 ** 3
     name = '0005'
-    ranges_loghist = [(320, 10000000,)]
-    #ranges_hist = [(100, 32000000,)]                  
-    ranges_hist = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,), (320,10000000)]
-    ranges_pie = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
                   
-    #for rng in ranges_hist:
-        #create_plot(input_path, output_plots_path, name, rng, voxel_size)
+    # Arihm plots
+    ranges_hist = [(100, 32000000,)]                  
+    #ranges_hist = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,), (320,10000000)]
+    for rng in ranges_hist:
+        create_plot(input_path, output_plots_path, name, rng, voxel_size)
     
-    #for rng in ranges_loghist:
-       #create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
+    # Log plots
+    ranges_loghist = [(320, 10000000,)]
+    for rng in ranges_loghist:
+        create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
         
-    #create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
+    # Pie chart
+    ranges_pie = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
+    create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
     
-    create_distribution_std (input_path, name, voxel_size, (5000, 10000))
+    # Histogram + Gaussian dist
+    #create_distribution_std (input_path, name, voxel_size, (5000, 10000))
+    
+    # Staked histogram
+    #names = ['0005', '0007', '0008', '0010']
+    #ranges_hist = [[(100, 32000000,)],[(100, 32000000,)],[(100, 32000000,)], [(100, 32000000,)]] 
+    #create_plot_stack(input_path, output_plots_path, names, ranges_hist, voxel_size, COLORS[:4], logscale=True)
     
 if __name__ == "__main__":
     sys.exit(main())
