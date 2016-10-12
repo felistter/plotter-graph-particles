@@ -5,9 +5,9 @@ from matplotlib.colors import colorConverter
 import numpy as np
 import pandas as pd
 import matplotlib.mlab as mlab
+from matplotlib.ticker import MaxNLocator
 
-
-COLORS = ['#87D37C', '#65C6BB', '#1BBC9B', '#F5D76E', '#1E824C']
+#COLORS = ['#87D37C', '#65C6BB', '#1BBC9B', '#F5D76E', '#1E824C']
 
 plt.style.use('ggplot')
 
@@ -70,11 +70,14 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
         return '%s $\minus$ %s $\mathregular{um^3}$' % (number(v1), number(v2))
                       
     titles = [get_title(minv, maxv) for minv,maxv in rngs]
-    colors = ['#87D37C', '#65C6BB', '#1BBC9B', '#F5D76E', '#1E824C']
-              
-    textprops={'fontsize': 22, 'weight': 'light', 'family': 'sans-serif'}
+    #colors = ['#1E824C', '#80B584', '#A6CAA9', '#C9DECB', '#E9F1EA'] #green
+    #colors = ['#663399', '#AD8BFE', '#C4ABFE', '#BE90D4', '#DDCEFF'] #purple
+    #colors = ['#23819C', '#2FAACE', '#57BCD9', '#8CD1E6', '#B8E2EF'] #blue
+    #colors = ['#ae4900', '#c75400', '#e15e00', '#ff862e', '#ff862e'] #orange
+           
+    textprops={'fontsize': 55, 'weight': 'light', 'family': 'sans-serif'}
     pie_width = 0.5
-    fig, ax = plt.subplots(figsize=(8.5,8))
+    fig, ax = plt.subplots(figsize=(19,13))
     ax.axis('equal')
 
     patches, texts, autotexts = ax.pie(proc_particles, \
@@ -88,7 +91,15 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
              width=pie_width, \
              edgecolor='white')
     
-    plt.legend(patches, titles, loc=(0.8,0.8), fontsize=16)
+    plt.text(0.5, 0.5, \
+         '45S5', \
+         horizontalalignment='center', \
+         verticalalignment='center', \
+         weight='bold', \
+         fontsize=80, \
+         transform=ax.transAxes)
+    
+    plt.legend(patches, titles, loc=(0.71,0.66), fontsize=50)
     
     for t, p in zip(autotexts, proc_particles):
         if p < 2.0:
@@ -105,7 +116,7 @@ def create_pie_chart(input_path, output_path, name, rngs, voxel_size):
     #series = pd.Series(np.array(proc_particles), index=titles)
     #ax = series.plot.pie(figsize=(6, 6), radius=1, pctdistance=1-width/2, legend=True)
     #plt.show()
-    plt.subplots_adjust(left=-0.08, right=0.9, top=1, bottom=-0.08)
+    plt.subplots_adjust(left=-0.4, right=1, top=1, bottom=-0.08)
     
     output_path = create_folder_with_path(output_path, 'Pie_charts')
         
@@ -121,12 +132,12 @@ def create_plot_stack(input_path, output_path, names, rngs, voxel_size, colors, 
             df = df[(df['volume(um^3)'] > rng_min) & (df['volume(um^3)'] < rng_max)]
             df = df['volume(um^3)']
         
-            ax = df.plot(kind='hist', bins=50, color=color, xlim=(rng[0], rng[1],), figsize=(14,10), fontsize=16)
-            ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$', color='black', fontsize=16, labelpad=20)
-            ax.set_ylabel("Number of particles", color='black', fontsize=16, labelpad=20)
+            ax = df.plot(kind='hist', bins=50, color=color, xlim=(rng[0], rng[1],), figsize=(14,10), fontsize=20)
+            ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$', color='black', fontsize=20, labelpad=20)
+            ax.set_ylabel("Number of particles", color='black', fontsize=20, labelpad=20)
             ax.tick_params(axis='x', colors='black')
             ax.tick_params(axis='y', colors='black')
-            
+                        
             if logscale: 
                 ax.set_yscale('log')
        
@@ -143,11 +154,18 @@ def create_plot(input_path, output_path, name, rng, voxel_size, logscale=False):
     df = df[(df['volume(um^3)'] > rng_min) & (df['volume(um^3)'] < rng_max)]
     df = df['volume(um^3)']
 
-    ax = df.plot(kind='hist', bins=50, color='#1BBC9B', xlim=(rng[0], rng[1],), figsize=(14,10), fontsize=16)
-    ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$', color='black', fontsize=16, labelpad=20)
-    ax.set_ylabel("Number of particles", color='black', fontsize=16, labelpad=20)
+    ax = df.plot(kind='hist', bins=50, color='#ae4900', xlim=(rng[0], rng[1],), figsize=(50,50), fontsize=95)
+    ax.set_xlabel(r'Size of particles, $\mathregular{um^3}$', color='black', fontsize=95, labelpad=60)
+    ax.set_ylabel("Number of particles", color='black', fontsize=95, labelpad=60)
     ax.tick_params(axis='x', colors='black')
     ax.tick_params(axis='y', colors='black')
+    ax.xaxis.offsetText.set_fontsize(80)
+    ax.xaxis.offsetText.set_color('black')
+    ax.xaxis.get_major_formatter().set_powerlimits((0, 0))
+    ax.xaxis.set_major_locator(MaxNLocator(prune='lower'))
+    ax.yaxis.get_major_formatter().set_powerlimits((0, 0))
+    ax.yaxis.offsetText.set_fontsize(80)
+    ax.yaxis.offsetText.set_color('black')
     
     if logscale: 
         ax.set_yscale('log')
@@ -161,22 +179,22 @@ def main():
     output_plots_path = os.path.join('..', 'Plots')
     
     voxel_size = 3.7 ** 3
-    name = '0005'
+    name = '0010'
                   
     # Arihm plots
-    ranges_hist = [(100, 32000000,)]                  
-    #ranges_hist = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,), (320,10000000)]
+    ranges_hist = [(320, 10000000,)]                  
+    #ranges_hist = [(320,100000,), (100000, 1000000,), (1000000, 10000000,),]
     for rng in ranges_hist:
         create_plot(input_path, output_plots_path, name, rng, voxel_size)
     
     # Log plots
-    ranges_loghist = [(320, 10000000,)]
-    for rng in ranges_loghist:
-        create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
+    #ranges_loghist = [(320, 10000000,)]
+    #for rng in ranges_loghist:
+        #create_plot(input_path, output_plots_path, name, rng, voxel_size, logscale=True)
         
     # Pie chart
-    ranges_pie = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
-    create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
+    #ranges_pie = [(320, 10000,), (10000,100000,), (100000, 1000000,), (1000000, 10000000,)]
+    #create_pie_chart(input_path, output_plots_path, name, ranges_pie, voxel_size)
     
     # Histogram + Gaussian dist
     #create_distribution_std (input_path, name, voxel_size, (5000, 10000))
